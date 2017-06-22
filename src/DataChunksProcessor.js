@@ -94,11 +94,17 @@ module.exports = (self, tableName, haveDataChunksProcessed) => {
                                                     generateError(self, '\t--[prepareDataChunks] Cannot connect to PostgreSQL server...\n' + error);
                                                     resolveDataUnit();
                                                 } else {
+                                                    const columnTypeList = self._dicTables[tableName].arrTableColumns.map(column => {
+                                                        return column.Type;
+                                                    });
+
                                                     const strJson = '{"_tableName":"' + tableName
                                                         + '","_selectFieldList":"' + strSelectFieldList + '",'
                                                         + '"_offset":' + offset + ','
                                                         + '"_rowsInChunk":' + rowsInChunk + ','
-                                                        + '"_rowsCnt":' + rowsCnt + '}';
+                                                        + '"_rowsCnt":' + rowsCnt + ','
+                                                        + '"_columnTypeList":"' + columnTypeList.join(',') + '"'
+                                                        + '}';
 
                                                     /*
                                                      * Define current data chunk size in MB.

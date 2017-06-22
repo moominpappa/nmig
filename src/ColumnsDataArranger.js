@@ -45,7 +45,7 @@ module.exports = (arrTableColumns, mysqlVersion) => {
             arrTableColumns[i].Type.indexOf('blob') !== -1
             || arrTableColumns[i].Type.indexOf('binary') !== -1
         ) {
-            strRetVal += 'HEX(`' + arrTableColumns[i].Field + '`),';
+            strRetVal += 'CONCAT(\'\\\\x\', HEX(`' + arrTableColumns[i].Field + '`)) AS `' + arrTableColumns[i].Field + '`,';
         } else if (
             arrTableColumns[i].Type.indexOf('bit') !== -1
         ) {
@@ -56,9 +56,9 @@ module.exports = (arrTableColumns, mysqlVersion) => {
         ) {
             strRetVal += 'IF(`' + arrTableColumns[i].Field
                       +  '` IN(\'0000-00-00\', \'0000-00-00 00:00:00\'), \'-INFINITY\', CAST(`'
-                      +  arrTableColumns[i].Field + '` AS CHAR)),';
+                      +  arrTableColumns[i].Field + '` AS CHAR)) AS `' + arrTableColumns[i].Field + '`,';
         } else {
-            strRetVal += '`' + arrTableColumns[i].Field + '`,';
+            strRetVal += '`' + arrTableColumns[i].Field + '` AS `' + arrTableColumns[i].Field + '`,';
         }
     }
 

@@ -23,7 +23,7 @@
 const fs                     = require('fs');
 const path                   = require('path');
 const { from }               = require('pg-copy-streams');
-const csvStringify           = require('./CsvStringifyModified');
+const formatData             = require('./DataFormatter');
 const log                    = require('./Logger');
 const generateError          = require('./ErrorGenerator');
 const connect                = require('./Connector');
@@ -50,7 +50,8 @@ process.on('message', signal => {
                         signal.chunks[i]._offset,
                         signal.chunks[i]._rowsInChunk,
                         signal.chunks[i]._rowsCnt,
-                        signal.chunks[i]._id
+                        signal.chunks[i]._id,
+                        signal.chunks[i]._columnTypeList
                     );
                 }
 
@@ -197,10 +198,11 @@ const processDataError = (self, streamError, sql, sqlCopy, tableName, dataPoolId
  * @param {Number}     rowsInChunk
  * @param {Number}     rowsCnt
  * @param {Number}     dataPoolId
+ * @param {String}     columnTypeList
  *
  * @returns {Promise}
  */
-const populateTableWorker = (self, tableName, strSelectFieldList, offset, rowsInChunk, rowsCnt, dataPoolId) => {
+const populateTableWorker = (self, tableName, strSelectFieldList, offset, rowsInChunk, rowsCnt, dataPoolId, columnTypeList) => {
     return new Promise(resolvePopulateTableWorker => {
         self._mysql.getConnection((error, connection) => {
             if (error) {
@@ -222,24 +224,24 @@ const populateTableWorker = (self, tableName, strSelectFieldList, offset, rowsIn
                         rowsInChunk                                                             = rows.length;
                         rows[0][self._schema + '_' + originalTableName + '_data_chunk_id_temp'] = dataPoolId;
 
-                        csvStringify(rows, (csvError, csvString) => {
+                        formatData(rows, columnTypeList, (formatError, formattedString) => {
                             rows = null;
 
-                            if (csvError) {
-                                generateError(self, '\t--[populateTableWorker] ' + csvError);
+                            if (formatError) {
+                                generateError(self, '\t--[populateTableWorker] ' + formatError);
                                 resolvePopulateTableWorker();
                             } else {
-                                const buffer = Buffer.from(csvString, self._encoding);
-                                csvString  = null;
+                                const buffer = Buffer.from(formattedString, self._encoding);
+                                formattedString  = null;
 
-                                fs.open(csvAddr, 'w', self._0777, (csvErrorFputcsvOpen, fd) => {
-                                    if (csvErrorFputcsvOpen) {
-                                        generateError(self, '\t--[populateTableWorker] ' + csvErrorFputcsvOpen);
+                                fs.open(csvAddr, 'w', self._0777, (formatErrorFsOpen, fd) => {
+                                    if (formatErrorFsOpen) {
+                                        generateError(self, '\t--[populateTableWorker] ' + formatErrorFsOpen);
                                         resolvePopulateTableWorker();
                                     } else {
-                                        fs.write(fd, buffer, 0, buffer.length, null, csvErrorFputcsvWrite => {
-                                            if (csvErrorFputcsvWrite) {
-                                                generateError(self, '\t--[populateTableWorker] ' + csvErrorFputcsvWrite);
+                                        fs.write(fd, buffer, 0, buffer.length, null, formatErrorFsWrite => {
+                                            if (formatErrorFsWrite) {
+                                                generateError(self, '\t--[populateTableWorker] ' + formatErrorFsWrite);
                                                 resolvePopulateTableWorker();
                                             } else {
                                                 self._pg.connect((error, client, done) => {
@@ -247,7 +249,7 @@ const populateTableWorker = (self, tableName, strSelectFieldList, offset, rowsIn
                                                         generateError(self, '\t--[populateTableWorker] Cannot connect to PostgreSQL server...\n' + error, sql);
                                                         deleteCsv(csvAddr, fd).then(() => resolvePopulateTableWorker());
                                                     } else {
-                                                        const sqlCopy    = 'COPY "' + self._schema + '"."' + tableName + '" FROM STDIN DELIMITER \'' + self._delimiter + '\' CSV;';
+                                                        const sqlCopy    = 'COPY "' + self._schema + '"."' + tableName + '" FROM STDIN NULL AS \'null\';';
                                                         const copyStream = client.query(from(sqlCopy));
                                                         const readStream = fs.createReadStream(csvAddr, { encoding: self._encoding });
 

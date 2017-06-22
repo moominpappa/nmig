@@ -53,7 +53,6 @@ const readConfig = () => {
             config.dataTypesMapAddr = path.join(__dirname, '..', 'data_types_map.json');
             resolve(config);
         });
-
     });
 };
 
@@ -93,9 +92,7 @@ const readExtraConfig = config => {
  * @returns {Promise}
  */
 const initializeConversion = config => {
-    return new Promise(resolve => {
-        resolve(new Conversion(config));
-    });
+    return Promise.resolve(new Conversion(config));
 };
 
 readConfig()
