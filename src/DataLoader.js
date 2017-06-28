@@ -222,9 +222,12 @@ const populateTableWorker = (self, tableName, strSelectFieldList, offset, rowsIn
                         resolvePopulateTableWorker();
                     } else {
                         rowsInChunk                                                             = rows.length;
-                        rows[0][self._schema + '_' + originalTableName + '_data_chunk_id_temp'] = dataPoolId;
+                        //rows[0][self._schema + '_' + originalTableName + '_data_chunk_id_temp'] = dataPoolId;
+                        rows.map(row => {
+                            return row[self._schema + '_' + originalTableName + '_data_chunk_id_temp'] = dataPoolId;
+                        });
 
-                        formatData(rows, columnTypeList, (formatError, formattedString) => {
+                        formatData(rows, columnTypeList + ',int', (formatError, formattedString) => {
                             rows = null;
 
                             if (formatError) {

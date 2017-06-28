@@ -31,12 +31,40 @@ const escapeValue = value => {
     return value
         .toString()
         .replace(/\\/g, '\\\\')
-        .replace(/\b/g, '\\b')
-        .replace(/\f/g, '\\f')
-        .replace(/\v/g, '\\v')
+        //.replace(/\b/g, '\\b')
+        //.replace(/\f/g, '\\f')
+        //.replace(/\v/g, '\\v')
         .replace(/\n/g, '\\n')
         .replace(/\r/g, '\\r')
         .replace(/\t/g, '\\t');
+};
+
+/**
+ * Check if given value is null or undefined.
+ *
+ * @param {String|Null|Undefined} value
+ *
+ * @returns {Boolean}
+ */
+const isNull = value => {
+    return value === undefined || value === null;
+};
+
+/**
+ * Check if given value is numeric.
+ *
+ * @param {String} type
+ *
+ * @returns {Boolean}
+ */
+const shouldEscape = type => {
+    return type.indexOf('char') !== -1
+        || type.indexOf('text') !== -1
+        || type.indexOf('blob') !== -1
+        || type.indexOf('varbinary') !== -1
+        || type.indexOf('enum') !== -1
+        || type.indexOf('set') !== -1
+        || type.indexOf('json') !== -1;
 };
 
 /**
@@ -50,16 +78,13 @@ const escapeValue = value => {
 const processRecord = (record, columnTypeArray) => {
     let retVal = '';
     let cnt    = 0;
-    console.log(record);///////////////////////////////
+
     for (const column in record) {
-        if (record[column] === undefined || record[column] === null) {
+        if (isNull(record[column])) {
             retVal += 'null\t';
-        } /*else if (
-            cnt < columnTypeArray.length
-            && (columnTypeArray[cnt].indexOf('blob') !== -1 || columnTypeArray[cnt].indexOf('binary') !== -1)
-        ) {
-            //
-        }*/ else {
+        } else if (shouldEscape(columnTypeArray[cnt])) {
+            retVal += escapeValue(record[column]) + '\t';
+        } else {
             retVal += record[column] + '\t';
         }
 
