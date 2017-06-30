@@ -28,15 +28,18 @@
  * @returns {String}
  */
 const escapeValue = value => {
+    // value = value.replace(/(?:\\[rn]|[\r\n]+)+/g, "");
+
     return value
         .toString()
-        .replace(/\\/g, '\\\\')
-        //.replace(/\b/g, '\\b') //  error: invalid input syntax for integer: ////////
-        .replace(/\f/g, '\\f')
-        .replace(/\v/g, '\\v')
-        .replace(/\n/g, '\\n')
-        .replace(/\r/g, '\\r')
-        .replace(/\t/g, '\\t');
+        //.replace(/\b/gi, '\\b') //  error: invalid input syntax for integer: ////////
+        .replace(/\f/gi, '\\f')  // error: missing data for column "readed" ///////
+        .replace(/\v/gi, '\\v')  //  error: literal carriage return found in data ////////
+        .replace(/\n/gi, '\\n')
+        .replace(/\r/gi, '\\r')
+        .replace(/\t/gi, '\\t')
+        .replace(/\r\n/gi, '\\r\\n')
+        .replace(/\\/gi, '\\\\');
 };
 
 /**

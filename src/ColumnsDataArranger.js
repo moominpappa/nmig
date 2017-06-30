@@ -78,22 +78,20 @@ const isDateTime = type => {
 module.exports = (arrTableColumns, mysqlVersion) => {
     let strRetVal               = '';
     const arrTableColumnsLength = arrTableColumns.length;
+    const wkbFunc               = mysqlVersion >= 5.76 ? 'ST_AsWKB' : 'AsWKB';
 
     for (let i = 0; i < arrTableColumnsLength; ++i) {
         const field = arrTableColumns[i].Field;
         const type  = arrTableColumns[i].Type;
 
         if (isSpacial(type)) {
-            strRetVal += mysqlVersion >= 5.76
-                ? 'CONCAT(\'\\\\x\', HEX(ST_AsWKB(`' + field + '`))) AS `' + field + '`,'
-                : 'CONCAT(\'\\\\x\', HEX(AsWKB(`' + field + '`))) AS `' + field + '`,';
+            strRetVal += 'CONCAT(\'\\\\x\', HEX(' + wkbFunc + '(`' + field + '`))) AS `' + field + '`,';
         } else if (isBinary(type)) {
             strRetVal += 'CONCAT(\'\\\\x\', HEX(`' + field + '`)) AS `' + field + '`,';
         } else if (isBit(type)) {
             strRetVal += 'BIN(`' + field + '`) AS `' + field + '`,';
         } else if (isDateTime(type)) {
-            strRetVal += 'IF(`' + field
-                      +  '` IN(\'0000-00-00\', \'0000-00-00 00:00:00\'), \'-INFINITY\', CAST(`'
+            strRetVal += 'IF(`' + field +  '` IN(\'0000-00-00\', \'0000-00-00 00:00:00\'), \'-INFINITY\', CAST(`'
                       +  field + '` AS CHAR)) AS `' + field + '`,';
         } else {
             strRetVal += '`' + field + '` AS `' + field + '`,';
