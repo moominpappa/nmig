@@ -31,38 +31,31 @@ const escapeValue = value => {
     return value
         .toString()
         .replace(/\\/g, '\\\\')
-        //.replace(/\b/g, '\\b')
-        //.replace(/\f/g, '\\f')
-        //.replace(/\v/g, '\\v')
+        //.replace(/\b/g, '\\b') //  error: invalid input syntax for integer: ////////
+        .replace(/\f/g, '\\f')
+        .replace(/\v/g, '\\v')
         .replace(/\n/g, '\\n')
         .replace(/\r/g, '\\r')
         .replace(/\t/g, '\\t');
 };
 
 /**
- * Check if given value is null or undefined.
- *
- * @param {String|Null|Undefined} value
- *
- * @returns {Boolean}
- */
-const isNull = value => {
-    return value === undefined || value === null;
-};
-
-/**
- * Check if given value is numeric.
+ * Check if given column's value should be escaped.
  *
  * @param {String} type
  *
  * @returns {Boolean}
  */
-const shouldEscape = type => {
+const shouldBeEscaped = type => {
     return type.indexOf('char') !== -1
         || type.indexOf('text') !== -1
         || type.indexOf('blob') !== -1
-        || type.indexOf('varbinary') !== -1
+        || type.indexOf('binary') !== -1
         || type.indexOf('enum') !== -1
+        || type.indexOf('geometry') !== -1
+        || type.indexOf('point') !== -1
+        || type.indexOf('linestring') !== -1
+        || type.indexOf('polygon') !== -1
         || type.indexOf('set') !== -1
         || type.indexOf('json') !== -1;
 };
@@ -80,9 +73,9 @@ const processRecord = (record, columnTypeArray) => {
     let cnt    = 0;
 
     for (const column in record) {
-        if (isNull(record[column])) {
+        if (record[column] === undefined || record[column] === null) {
             retVal += 'null\t';
-        } else if (shouldEscape(columnTypeArray[cnt])) {
+        } else if (shouldBeEscaped(columnTypeArray[cnt])) {
             retVal += escapeValue(record[column]) + '\t';
         } else {
             retVal += record[column] + '\t';
@@ -104,10 +97,11 @@ const processRecord = (record, columnTypeArray) => {
  * @returns {undefined}
  */
 module.exports = (inputRecords, columnTypeList, callback) => {
-    let formattedString   = '';
-    const columnTypeArray = columnTypeList.split(',');
+    let formattedString      = '';
+    const inputRecordsLength = inputRecords.length;
+    const columnTypeArray    = columnTypeList.split(',');
 
-    for (let i = 0; i < inputRecords.length; ++i) {
+    for (let i = 0; i < inputRecordsLength; ++i) {
         formattedString += processRecord(inputRecords[i], columnTypeArray) + '\n';
     }
 

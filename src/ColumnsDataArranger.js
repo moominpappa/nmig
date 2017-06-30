@@ -85,8 +85,8 @@ module.exports = (arrTableColumns, mysqlVersion) => {
 
         if (isSpacial(type)) {
             strRetVal += mysqlVersion >= 5.76
-                ? 'HEX(ST_AsWKB(`' + field + '`)) AS `' + field + '`,'
-                : 'HEX(AsWKB(`' + field + '`)) AS `' + field + '`,';
+                ? 'CONCAT(\'\\\\x\', HEX(ST_AsWKB(`' + field + '`))) AS `' + field + '`,'
+                : 'CONCAT(\'\\\\x\', HEX(AsWKB(`' + field + '`))) AS `' + field + '`,';
         } else if (isBinary(type)) {
             strRetVal += 'CONCAT(\'\\\\x\', HEX(`' + field + '`)) AS `' + field + '`,';
         } else if (isBit(type)) {
